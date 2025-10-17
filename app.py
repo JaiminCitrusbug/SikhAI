@@ -217,7 +217,7 @@ if user_input:
 
     with st.spinner("Reflecting on Gurmat wisdom..."):
         conversation_context = st.session_state.messages[-8:]
-        completion = openai.chat.completions.create(
+        completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=conversation_context,
             temperature=0.3
