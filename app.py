@@ -77,8 +77,7 @@ Always redirect the user toward **Naam Simran**, **Seva**, and **Gurbani-based r
 
 ### 7. Output Template
 For every user question, structure your reply as:
-
-**English Explanation:**  
+   
 [Detailed Gurmat-aligned interpretation.]
 
 **Punjabi (Gurmukhi):**  
@@ -96,8 +95,8 @@ For every user question, structure your reply as:
 
 **User:** What is the Sikh view on anger?
 
-**SikhAI:**  
-**English:** In Sikhi, anger (krodh) is seen as one of the five vices that lead the mind away from Waheguru. Guru Sahib teaches us to overcome anger through forgiveness and Naam Simran.  
+
+In Sikhi, anger (krodh) is seen as one of the five vices that lead the mind away from Waheguru. Guru Sahib teaches us to overcome anger through forgiveness and Naam Simran.  
 **Punjabi (Gurmukhi):** ਸਿੱਖ ਧਰਮ ਵਿੱਚ ਕ੍ਰੋਧ ਨੂੰ ਪੰਜ ਵਿਕਾਰਾਂ ਵਿੱਚੋਂ ਇੱਕ ਮੰਨਿਆ ਗਿਆ ਹੈ। ਗੁਰੂ ਸਾਹਿਬ ਸਾਨੂੰ ਕ੍ਰੋਧ ਦੀ ਥਾਂ ਮਾਫ਼ੀ ਤੇ ਨਾਮ ਸਿਮਰਨ ਦੀ ਸਿੱਖਿਆ ਦਿੰਦੇ ਹਨ।  
 **Roman Punjabi:** Sikh dharam vich krodh nū panj vikaraan vichoṅ ikk mannīā giā hai. Guru Sahib sānu krodh dī thāṅ maafī te Naam Simran dī sikhīā dinde han.  
 **Citation:** Sri Guru Granth Sahib Ji, Ang 1128, Guru Arjan Dev Ji
@@ -176,7 +175,7 @@ st.markdown("""
 # --- HEADER ---
 st.markdown("""
 <div class="header">
-    <h1>Sikh AI Chat System (POC)</h1>
+    <h1>Sikh AI Chat System</h1>
     <p><b>100% Gurmat-aligned, Context-Aware Conversational Assistant</b></p>
     <p><i>All responses are aligned with Sri Guru Granth Sahib Ji and Sikh Rehat Maryada.</i></p>
 </div>
@@ -211,18 +210,71 @@ st.markdown('<div class="input-container">', unsafe_allow_html=True)
 user_input = st.chat_input("🙏 Type your question or continue the conversation...")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# --- GENERATE RESPONSE ---
+# --- GENERATE RESPONSE (UPDATED LOGIC WITH LOADER) ---
 if user_input:
+    # 1️⃣ Show user message immediately
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    with st.spinner("Reflecting on Gurmat wisdom..."):
-        conversation_context = st.session_state.messages[-8:]
+    # Display user's message right away
+    st.markdown(f"""
+    <div class="chat-bubble user-bubble">
+        <div class="user-msg"><b>You:</b> {user_input}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2️⃣ Temporary placeholder for AI reply (with animated loader)
+    placeholder = st.empty()
+
+    # CSS-based loader animation
+    loader_html = """
+    <div class="chat-bubble bot-bubble">
+        <div class="bot-msg">
+            <b>SikhAI:</b> 
+            <span class="loader-dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>
+        </div>
+    </div>
+
+    <style>
+    @keyframes blink {
+        0% { opacity: 0.2; }
+        20% { opacity: 1; }
+        100% { opacity: 0.2; }
+    }
+    .loader-dots .dot {
+        animation: blink 1.4s infinite both;
+        font-weight: bold;
+        font-size: 1.2rem;
+        line-height: 0;
+        color: #4a148c;
+    }
+    .loader-dots .dot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    .loader-dots .dot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    </style>
+    """
+    placeholder.markdown(loader_html, unsafe_allow_html=True)
+
+    # 3️⃣ Fetch AI response from OpenAI
+    conversation_context = st.session_state.messages[-8:]
+    try:
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=conversation_context,
             temperature=0.3
         )
         ai_reply = completion.choices[0].message.content
+    except Exception as e:
+        ai_reply = f"🙏 There was an error while connecting to the server: {str(e)}"
 
+    # 4️⃣ Update placeholder with final SikhAI response
+    placeholder.markdown(f"""
+    <div class="chat-bubble bot-bubble">
+        <div class="bot-msg"><b>SikhAI:</b> {ai_reply}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 5️⃣ Store SikhAI reply in session
     st.session_state.messages.append({"role": "assistant", "content": ai_reply})
-    st.rerun()
